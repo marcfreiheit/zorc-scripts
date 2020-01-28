@@ -1,0 +1,57 @@
+#!/usr/bin/env sh
+
+set -o errexit
+set -o nounset
+
+USER=zcy
+HOST=10.8.2.246
+REGISTRY=registry.xn--2kr066avsra.com
+IMAGES="zorc-foundry/api zorc-foundry/frontend zorc-foundry/camunda-java zorc-foundry/apsconnect zorc-foundry/lindeconnect zorc-foundry/plcconnect"
+
+print_usage() {
+  echo "test"
+}
+
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --registry=*)
+      REGISTRY="${1#*=}"
+      ;;
+    --tag=*)
+      TAG="${1#*=}"
+      ;;
+    --host=*)
+      HOST="${1#*=}"
+      ;;
+    --user=*)
+      USER="${1#*=}"
+      ;;
+    --images=*)
+      IMAGES="${1#*=}"
+      ;;
+    *)
+      printf "***************************\n"
+      printf "* Error: Invalid argument.*\n"
+      printf "***************************\n"
+      exit 1
+  esac
+  shift
+done
+
+if [ -z ${TAG+x} ]; then print_usage && exit 2; fi 
+
+
+for image in $IMAGES
+do
+  echo "Pulling $image"
+  docker pull $REGISTRY/$image:$TAG
+done
+
+for image in $IMAGES
+do
+  echo "Loading $image"
+  docker save $REGISTRY/$image:$TAG | bzip2 | ssh zcy@10.8.2.246 'bunzip2 | docker load'
+done
+
+# vim: set filetype=sh:
